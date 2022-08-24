@@ -21,6 +21,8 @@ func Start() (App, error) {
 	}
 
 	app := App{config: config}
+
+	//Up server and handle controller
 	err = app.serverUp()
 	if err != nil {
 		return App{}, err
@@ -43,18 +45,8 @@ func (app *App) serverUp() error {
 		if err != nil {
 			return fmt.Errorf("can't accept: %v", err)
 		}
-		fmt.Printf("Client [%s] <%s> was connected", time.Now().String(), connection.RemoteAddr().String())
-		go clientHandler(connection)
+		client := Client{Info: connection.RemoteAddr().String()}
+		fmt.Printf("Client [%s] <%s> was connected", time.Now().String(), client.Info)
+		go client.Handler(connection)
 	}
-}
-
-func clientHandler(connection net.Conn) {
-	buffer := make([]byte, 1024)
-	mLen, err := connection.Read(buffer)
-	if err != nil {
-		fmt.Printf("error during client handling <reading> :%s \n", err)
-	}
-	fmt.Println("Received: ", string(buffer[:mLen]))
-	_, err = connection.Write([]byte("Thanks! Got your message:" + string(buffer[:mLen])))
-	connection.Close()
 }
