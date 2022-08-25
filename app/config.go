@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Env  string `json:"env"`
-	Port string `json:"port"`
-	Host string `json:"host"`
+	Env         string `json:"env"`
+	Port        string `json:"port"`
+	Host        string `json:"host"`
+	RecordLimit int    `json:"record_limit"`
 }
 
 func (c *Config) GetServerString() string {

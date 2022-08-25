@@ -5,11 +5,14 @@ import (
 	"net"
 	"path/filepath"
 	"time"
+	"wall-server/app/actions"
+	wall_app "wall-server/wall-app"
 )
 
 type App struct {
-	config Config
-	server string
+	config  Config
+	server  string
+	WallApp *wall_app.WallList
 }
 
 func Start() (App, error) {
@@ -22,12 +25,20 @@ func Start() (App, error) {
 
 	app := App{config: config}
 
+	//Start application
+	app.runApp()
 	//Up server and handle controller
 	err = app.serverUp()
 	if err != nil {
 		return App{}, err
 	}
 	return app, nil
+}
+
+func (app *App) runApp() {
+	//Up inmemory storage for records
+	app.WallApp = wall_app.CreateWallList(app.config.RecordLimit)
+	actions.RegisterActions()
 }
 
 func (app *App) serverUp() error {
