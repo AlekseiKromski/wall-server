@@ -2,45 +2,44 @@ package app
 
 import (
 	"fmt"
-	"net"
+	"github.com/gorilla/websocket"
+	"wall-server/app/actions"
 )
 
 type Client struct {
-	Info string
+	conn     *websocket.Conn
+	security Security
 }
 
-type SocketClient struct {
-	socket    net.Conn
-	broadcast chan []byte
+func CreateNewClient(connection *websocket.Conn, config *Config) *Client {
+	return &Client{conn: connection, security: Security{attemptsAllowed: config.AttemptsAllowed, attemptsCount: 0}}
 }
 
-func (c *Client) Handler(connection net.Conn) {
-	socketClient := SocketClient{
-		socket:    connection,
-		broadcast: make(chan []byte),
-	}
-	//go startListeners(&socketClient)
-	go startReceiveChannel(&socketClient)
-
+func (c *Client) Handler(app *App) {
+	go c.startReceiveChannel(app)
 }
 
-func startReceiveChannel(client *SocketClient) {
+func (c *Client) startReceiveChannel(app *App) {
 	for {
-		buffer := make([]byte, 1024)
-		mLen, err := client.socket.Read(buffer)
+		_, message, err := c.conn.ReadMessage()
 		if err != nil {
-			fmt.Printf("error during client handling <reading> :%s \n", err)
-			client.socket.Close()
-			return
+			fmt.Printf("error in clinet: %v", err)
 		}
-		fmt.Println("\nReceived: ", string(buffer[:mLen]))
-		//action, err := actions.DecodeAction(buffer)
-		//if err != nil {
-		//	fmt.Println(err)
-		//	continue
-		//}
-		//action.Realisation.Do()
-		_, err = client.socket.Write([]byte("Thanks! Got your message:" + string(buffer[:mLen])))
-		fmt.Println(string(buffer))
+		fmt.Println(string(message))
+		c.security.doAttempt()
+		action, err := actions.DecodeAction(message)
+		if err != nil {
+			fmt.Printf("action decoder error: %v", err)
+
+			if c.security.attemptsCount >= c.security.attemptsAllowed {
+				break
+			}
+		} else {
+			action.Realisation.Do(app.WallApp, action.ActionData)
+			c.security.cleanAttempts()
+			c.conn.WriteMessage(1, []byte("OK"))
+		}
+
 	}
+	defer c.conn.Close()
 }

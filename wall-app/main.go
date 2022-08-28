@@ -1,6 +1,8 @@
 package wall_app
 
-import "time"
+import (
+	"time"
+)
 
 type WallList struct {
 	wallList []*Record
@@ -27,7 +29,7 @@ func (wl *WallList) GetRecords() []*Record {
 
 func (wl *WallList) PutRecord(r *Record) []*Record {
 	if wl.count >= wl.limit {
-		wl.wallList = append(wl.wallList[1:], r)
+		wl.wallList = append(wl.wallList[:], r)
 		wl.count = 0
 	} else {
 		wl.wallList = append(wl.wallList, r)

@@ -2,17 +2,22 @@ package app
 
 import (
 	"fmt"
-	"net"
+	"github.com/gorilla/websocket"
+	"net/http"
 	"path/filepath"
-	"time"
 	"wall-server/app/actions"
 	wall_app "wall-server/wall-app"
 )
 
 type App struct {
-	config  Config
-	server  string
-	WallApp *wall_app.WallList
+	config                 Config
+	server                 string
+	WallApp                *wall_app.WallList
+	httpConnectionUpgraded websocket.Upgrader
+	clients                []*Client
+}
+
+type WebSocket struct {
 }
 
 func Start() (App, error) {
@@ -24,7 +29,6 @@ func Start() (App, error) {
 	}
 
 	app := App{config: config}
-
 	//Start application
 	app.runApp()
 	//Up server and handle controller
@@ -43,21 +47,33 @@ func (app *App) runApp() {
 
 func (app *App) serverUp() error {
 	fmt.Println("Start server")
-	server, err := net.Listen("tcp", app.config.GetServerString())
-	if err != nil {
-		return fmt.Errorf("server can't start: %v", err)
+	app.httpConnectionUpgraded = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
 	}
-	defer server.Close()
-
-	fmt.Println("Listening on " + app.config.GetServerString())
-	fmt.Println("Waiting for clients...")
-	for {
-		connection, err := server.Accept()
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := app.httpConnectionUpgraded.Upgrade(w, r, nil)
 		if err != nil {
-			return fmt.Errorf("can't accept: %v", err)
+			fmt.Printf("problem while upgrade http connection to webscket: %v", err)
+			return
 		}
-		client := Client{Info: connection.RemoteAddr().String()}
-		fmt.Printf("Client [%s] <%s> was connected", time.Now().String(), client.Info)
-		go client.Handler(connection)
+		fmt.Println("Client was connected")
+		client := app.addClient(conn)
+		client.Handler(app)
+	})
+
+	http.ListenAndServe(app.config.GetServerString(), nil)
+	return nil
+}
+
+func (app *App) addClient(conn *websocket.Conn) *Client {
+	client := CreateNewClient(conn, &app.config)
+	app.clients = append(app.clients, client)
+	return client
+}
+
+func (app *App) sendNewClientConnectedMessage(ip string) {
+	for _, client := range app.clients {
+		client.conn.WriteMessage(1, []byte(fmt.Sprintf("New User was connected <%s>", ip)))
 	}
 }

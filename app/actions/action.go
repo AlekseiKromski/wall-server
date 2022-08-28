@@ -3,6 +3,7 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
+	wall_app "wall-server/wall-app"
 )
 
 var actions []*ActionHandler
@@ -17,11 +18,12 @@ type Action struct {
 type ActionHandler struct {
 	ActionType  string
 	Realisation ActionHandlerInterface
+	ActionData  interface{}
 }
 
 //For standart
 type ActionHandlerInterface interface {
-	Do() error
+	Do(appPayload *wall_app.WallList, data interface{}) error
 }
 
 func DecodeAction(buffer []byte) (*ActionHandler, error) {
@@ -30,6 +32,7 @@ func DecodeAction(buffer []byte) (*ActionHandler, error) {
 		return &ActionHandler{}, fmt.Errorf("can't unmarshal json to action: %v", err)
 	}
 	actionHandler, err := action.defineActionInRegistered()
+	actionHandler.ActionData = action.Data
 	if err != nil {
 		return nil, err
 	}
@@ -48,5 +51,5 @@ func (a *Action) defineActionInRegistered() (*ActionHandler, error) {
 			return action, nil
 		}
 	}
-	return nil, fmt.Errorf("can't find")
+	return nil, fmt.Errorf("can't find \n")
 }

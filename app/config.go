@@ -8,14 +8,15 @@ import (
 )
 
 type Config struct {
-	Env         string `json:"env"`
-	Port        string `json:"port"`
-	Host        string `json:"host"`
-	RecordLimit int    `json:"record_limit"`
+	Env             string `json:"env"`
+	Port            int    `json:"port"`
+	Host            string `json:"host"`
+	RecordLimit     int    `json:"record_limit"`
+	AttemptsAllowed int    `json:"attempts_allowed"`
 }
 
 func (c *Config) GetServerString() string {
-	return fmt.Sprintf("%s:%s", c.Host, c.Port)
+	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
 func LoadConfig(path string) (Config, error) {
