@@ -6,15 +6,17 @@ import (
 	"net/http"
 	"path/filepath"
 	"wall-server/app/actions"
+	"wall-server/app/triggers"
 	wall_app "wall-server/wall-app"
 )
 
 type App struct {
 	config                 Config
 	server                 string
-	WallApp                *wall_app.WallList
 	httpConnectionUpgraded websocket.Upgrader
 	clients                []*Client
+	ActionsWorker          *ActionsWorker
+	TriggersWorker         *TriggersWorker
 }
 
 type WebSocket struct {
@@ -41,8 +43,22 @@ func Start() (App, error) {
 
 func (app *App) runApp() {
 	//Up inmemory storage for records
-	app.WallApp = wall_app.CreateWallList(app.config.RecordLimit)
-	actions.RegisterActions()
+	wall_app.CreateWallList(app.config.RecordLimit)
+
+	sendMessage := &ActionHandler{
+		actionType: "send-message",
+		action:     &actions.SendMessage{},
+	}
+	toAll := &TriggerHandler{
+		triggerType: "to-all",
+		action:      &triggers.ToAll{},
+	}
+
+	app.ActionsWorker = &ActionsWorker{}
+	app.TriggersWorker = &TriggersWorker{}
+	app.ActionsWorker.registerHandler(sendMessage)
+	app.TriggersWorker.registerHandler(toAll)
+
 }
 
 func (app *App) serverUp() error {
@@ -59,6 +75,9 @@ func (app *App) serverUp() error {
 		}
 		fmt.Println("Client was connected")
 		client := app.addClient(conn)
+		wall_app.GetAppInstance().AddClient(&wall_app.Client{
+			Conn: client.Conn,
+		})
 		client.Handler(app)
 	})
 
@@ -70,10 +89,4 @@ func (app *App) addClient(conn *websocket.Conn) *Client {
 	client := CreateNewClient(conn, &app.config)
 	app.clients = append(app.clients, client)
 	return client
-}
-
-func (app *App) sendNewClientConnectedMessage(ip string) {
-	for _, client := range app.clients {
-		client.conn.WriteMessage(1, []byte(fmt.Sprintf("New User was connected <%s>", ip)))
-	}
 }

@@ -3,16 +3,15 @@ package app
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"wall-server/app/actions"
 )
 
 type Client struct {
-	conn     *websocket.Conn
+	Conn     *websocket.Conn
 	security Security
 }
 
 func CreateNewClient(connection *websocket.Conn, config *Config) *Client {
-	return &Client{conn: connection, security: Security{attemptsAllowed: config.AttemptsAllowed, attemptsCount: 0}}
+	return &Client{Conn: connection, security: Security{attemptsAllowed: config.AttemptsAllowed, attemptsCount: 0}}
 }
 
 func (c *Client) Handler(app *App) {
@@ -21,25 +20,37 @@ func (c *Client) Handler(app *App) {
 
 func (c *Client) startReceiveChannel(app *App) {
 	for {
-		_, message, err := c.conn.ReadMessage()
+		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
 			fmt.Printf("error in clinet: %v", err)
 		}
 		fmt.Println(string(message))
 		c.security.doAttempt()
-		action, err := actions.DecodeAction(message)
-		if err != nil {
+		actionHandler, err := app.ActionsWorker.defineAction(message)
+		if err != nil && actionHandler != nil {
+			if err == nil {
+				err = fmt.Errorf("CAN'T FIND ACTION HANDLER")
+			}
 			fmt.Printf("action decoder error: %v", err)
 
 			if c.security.attemptsCount >= c.security.attemptsAllowed {
 				break
 			}
 		} else {
-			action.Realisation.Do(app.WallApp, action.ActionData)
+			actionHandler.action.Do()
+			triggerHandler, err := app.TriggersWorker.defineTrigger(actionHandler.action.TrigType())
+			if err != nil && triggerHandler != nil {
+				if err == nil {
+					err = fmt.Errorf("CAN'T FIND TRIGGER HANDLER")
+				}
+				fmt.Printf("error in trigger handler: %v", err)
+			}
+			triggerHandler.action.Do()
+
 			c.security.cleanAttempts()
-			c.conn.WriteMessage(1, []byte("OK"))
+			c.Conn.WriteMessage(1, []byte("OK"))
 		}
 
 	}
-	defer c.conn.Close()
+	defer c.Conn.Close()
 }

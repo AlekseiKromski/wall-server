@@ -1,26 +1,44 @@
 package wall_app
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/gorilla/websocket"
 	"time"
 )
 
+var wallApp WallList
+
+type Client struct {
+	Conn *websocket.Conn
+}
+
 type WallList struct {
+	clients  []*Client
 	wallList []*Record
 	limit    int
 	count    int
 }
 
 type Record struct {
-	date time.Time
-	text string
+	Date time.Time `json:"date"`
+	Text string    `json:"text"`
 }
 
-func CreateWallRecord(text string) *Record {
-	return &Record{text: text, date: time.Now()}
+func CreateWallList(countOfRecords int) {
+	wallApp = WallList{wallList: []*Record{}, limit: countOfRecords, count: 0}
 }
 
-func CreateWallList(countOfRecords int) *WallList {
-	return &WallList{wallList: []*Record{}, limit: countOfRecords, count: 0}
+func GetAppInstance() *WallList {
+	return &wallApp
+}
+
+func (wl *WallList) CreateWallRecord(text string) *Record {
+	return &Record{Text: text, Date: time.Now()}
+}
+
+func (wl *WallList) AddClient(client *Client) {
+	wl.clients = append(wl.clients, client)
 }
 
 func (wl *WallList) GetRecords() []*Record {
@@ -37,4 +55,16 @@ func (wl *WallList) PutRecord(r *Record) []*Record {
 
 	wl.count++
 	return wl.wallList
+}
+
+func (wl *WallList) GetClients() []*Client {
+	return wl.clients
+}
+
+func (r *Record) ToJson() ([]byte, error) {
+	jsonRecord, err := json.Marshal(r)
+	if err != nil {
+		return nil, fmt.Errorf("can't convert record to json")
+	}
+	return jsonRecord, nil
 }
