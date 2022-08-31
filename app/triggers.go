@@ -2,6 +2,7 @@ package app
 
 type TriggerHandlerInterface interface {
 	Do()
+	SetData(data string)
 }
 
 type TriggerHandler struct {

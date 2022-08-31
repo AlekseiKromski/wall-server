@@ -48,7 +48,6 @@ func (c *Client) startReceiveChannel(app *App) {
 			triggerHandler.Action.Do()
 
 			c.security.cleanAttempts()
-			c.Conn.WriteMessage(1, []byte("OK"))
 		}
 
 	}
