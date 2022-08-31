@@ -5,8 +5,6 @@ import (
 	"github.com/gorilla/websocket"
 	"net/http"
 	"path/filepath"
-	"wall-server/app/actions"
-	"wall-server/app/triggers"
 	wall_app "wall-server/wall-app"
 )
 
@@ -22,7 +20,7 @@ type App struct {
 type WebSocket struct {
 }
 
-func Start() (App, error) {
+func Start(actions []*ActionHandler, triggers []*TriggerHandler) (App, error) {
 	//Try to load configuration
 	path := filepath.Join(".", "config.json")
 	config, err := LoadConfig(path)
@@ -32,7 +30,7 @@ func Start() (App, error) {
 
 	app := App{config: config}
 	//Start application
-	app.runApp()
+	app.runApp(actions, triggers)
 	//Up server and handle controller
 	err = app.serverUp()
 	if err != nil {
@@ -41,24 +39,30 @@ func Start() (App, error) {
 	return app, nil
 }
 
-func (app *App) runApp() {
+func (app *App) registerTriggers(triggers []*TriggerHandler) {
+	for _, trigger := range triggers {
+		app.TriggersWorker.registerHandler(trigger)
+	}
+}
+
+func (app *App) registerActions(actions []*ActionHandler) {
+	for _, action := range actions {
+		app.ActionsWorker.registerHandler(action)
+	}
+}
+
+func (app *App) registerWorkers() {
+	app.ActionsWorker = &ActionsWorker{}
+	app.TriggersWorker = &TriggersWorker{}
+}
+
+func (app *App) runApp(actions []*ActionHandler, triggers []*TriggerHandler) {
 	//Up inmemory storage for records
 	wall_app.CreateWallList(app.config.RecordLimit)
 
-	sendMessage := &ActionHandler{
-		actionType: "send-message",
-		action:     &actions.SendMessage{},
-	}
-	toAll := &TriggerHandler{
-		triggerType: "to-all",
-		action:      &triggers.ToAll{},
-	}
-
-	app.ActionsWorker = &ActionsWorker{}
-	app.TriggersWorker = &TriggersWorker{}
-	app.ActionsWorker.registerHandler(sendMessage)
-	app.TriggersWorker.registerHandler(toAll)
-
+	app.registerWorkers()
+	app.registerActions(actions)
+	app.registerTriggers(triggers)
 }
 
 func (app *App) serverUp() error {

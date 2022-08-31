@@ -9,14 +9,14 @@ type ActionHandlerInterface interface {
 }
 
 type ActionHandler struct {
-	actionType string
+	ActionType string
 	Data       string
-	action     ActionHandlerInterface
+	Action     ActionHandlerInterface
 }
 
 type Action struct {
-	ActionType string
-	Data       string
+	ActionType string `json:"action_type"`
+	Data       string `json:"data"`
 }
 
 type ActionsWorker struct {
@@ -34,8 +34,8 @@ func (aw *ActionsWorker) defineAction(message []byte) (*ActionHandler, error) {
 		return nil, err
 	}
 	for _, actionHandler := range aw.actions {
-		if actionHandler.actionType == action.ActionType {
-			actionHandler.action.SetData(action.Data)
+		if actionHandler.ActionType == action.ActionType {
+			actionHandler.Action.SetData(action.Data)
 			return actionHandler, nil
 		}
 	}

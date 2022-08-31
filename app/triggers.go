@@ -5,9 +5,9 @@ type TriggerHandlerInterface interface {
 }
 
 type TriggerHandler struct {
-	triggerType string
+	TriggerType string
 	data        string
-	action      TriggerHandlerInterface
+	Action      TriggerHandlerInterface
 }
 
 type TriggersWorker struct {
@@ -20,7 +20,7 @@ func (th *TriggersWorker) registerHandler(handler *TriggerHandler) {
 
 func (th *TriggersWorker) defineTrigger(triggerType string) (*TriggerHandler, error) {
 	for _, triggerHandler := range th.triggers {
-		if triggerHandler.triggerType == triggerType {
+		if triggerHandler.TriggerType == triggerType {
 			return triggerHandler, nil
 		}
 	}
