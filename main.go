@@ -2,24 +2,12 @@ package main
 
 import (
 	"fmt"
-	"wall-server/actions"
 	"wall-server/app"
-	"wall-server/triggers"
 )
 
-var actionHandlers = []*app.ActionHandler{
-	&app.ActionHandler{
-		ActionType: "send-message",
-		Action:     &actions.SendMessage{},
-	},
-}
+var actionHandlers = []*app.ActionHandler{}
 
-var triggerHandlers = []*app.TriggerHandler{
-	&app.TriggerHandler{
-		TriggerType: "to-all",
-		Action:      &triggers.ToAll{},
-	},
-}
+var triggerHandlers = []*app.TriggerHandler{}
 
 func main() {
 
