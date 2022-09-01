@@ -21,8 +21,9 @@ type WallList struct {
 }
 
 type Record struct {
-	Date time.Time `json:"date"`
-	Text string    `json:"text"`
+	Date   time.Time `json:"date"`
+	Text   string    `json:"text"`
+	Client string    `json:"client"`
 }
 
 func CreateWallList(countOfRecords int) {
@@ -33,8 +34,8 @@ func GetAppInstance() *WallList {
 	return &wallApp
 }
 
-func (wl *WallList) CreateWallRecord(text string) *Record {
-	return &Record{Text: text, Date: time.Now()}
+func (wl *WallList) CreateWallRecord(text string, clint string) *Record {
+	return &Record{Text: text, Date: time.Now(), Client: clint}
 }
 
 func (wl *WallList) AddClient(client *Client) {

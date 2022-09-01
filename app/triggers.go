@@ -3,6 +3,8 @@ package app
 type TriggerHandlerInterface interface {
 	Do()
 	SetData(data string)
+	SetClient(client *Client)
+	SetClients(client []*Client)
 }
 
 type TriggerHandler struct {

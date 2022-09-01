@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 	"os"
 )
@@ -24,7 +25,7 @@ func main() {
 		fmt.Println("Please, select option:")
 		fmt.Println("0. exit")
 		fmt.Println("1. connect to host")
-		fmt.Println("2. listen")
+		fmt.Println("2. listen server")
 		fmt.Scanln(&input)
 
 		switch input {
@@ -92,7 +93,6 @@ func listen() {
 			fmt.Println("Error in receive:", err)
 			return
 		}
-		fmt.Printf("[CLIENT]: %s\n", string(msg))
-
+		color.Cyan("[CLIENT]: " + string(msg))
 	}
 }

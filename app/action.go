@@ -6,6 +6,7 @@ type ActionHandlerInterface interface {
 	SetData(data string)
 	Do()
 	TrigType() string
+	SetClient(client *Client)
 }
 
 type ActionHandler struct {

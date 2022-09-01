@@ -3,15 +3,17 @@ package app
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/kjk/betterguid"
 )
 
 type Client struct {
 	Conn     *websocket.Conn
+	ID       string
 	security Security
 }
 
 func CreateNewClient(connection *websocket.Conn, config *Config) *Client {
-	return &Client{Conn: connection, security: Security{attemptsAllowed: config.AttemptsAllowed, attemptsCount: 0}}
+	return &Client{Conn: connection, security: Security{attemptsAllowed: config.AttemptsAllowed, attemptsCount: 0}, ID: betterguid.New()}
 }
 
 func (c *Client) Handler(app *App) {
@@ -37,6 +39,7 @@ func (c *Client) startReceiveChannel(app *App) {
 				break
 			}
 		} else {
+			actionHandler.Action.SetClient(c)
 			actionHandler.Action.Do()
 			triggerHandler, err := app.TriggersWorker.defineTrigger(actionHandler.Action.TrigType())
 			if err != nil || triggerHandler == nil {
@@ -45,6 +48,8 @@ func (c *Client) startReceiveChannel(app *App) {
 				}
 				fmt.Printf("error in trigger handler: %v", err)
 			}
+			triggerHandler.Action.SetClient(c)
+			triggerHandler.Action.SetClients(app.clients)
 			triggerHandler.Action.Do()
 
 			c.security.cleanAttempts()
