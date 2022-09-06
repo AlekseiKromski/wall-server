@@ -1,6 +1,6 @@
 {
   "env": "DEV",
-  "host": "localhost",
+  "host": "172.26.20.137",
   "port": 3000,
   "recordLimit": 20,
   "attempts_allowed": 5

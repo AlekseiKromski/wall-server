@@ -2,6 +2,7 @@
 <div class="loader">
   <div class="text">
     <h1>Connect to server</h1>
+    <p>{{status}}</p>
   </div>
   <div class="lds-grid"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
 </div>
@@ -9,6 +10,7 @@
 
 <script>
 export default {
+  props: ["status"],
   name: "loaderComponent"
 }
 </script>

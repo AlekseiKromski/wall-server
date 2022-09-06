@@ -16,7 +16,7 @@ type ActionHandler struct {
 }
 
 type Action struct {
-	ActionType string `json:"action_type"`
+	ActionType string `json:"actionType"`
 	Data       string `json:"data"`
 }
 

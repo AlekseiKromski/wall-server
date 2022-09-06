@@ -1,12 +1,20 @@
 <template>
-  <loader v-if="loader"/>
+  <loader v-model:status="status" v-if="loader"/>
   <div v-if="!loader" class="row">
    <div class="header">
      <h1><span>Wall app</span></h1>
      <p>Just app, where you can write everything</p>
-     <textarea></textarea>
-     <button>Send</button>
+     <textarea v-model="text"></textarea>
+     <button @click.prevent="sendMessage">Send</button>
    </div>
+    <div class="body">
+      <div class="card" v-for="message of messages">
+        <p>{{message.text}}</p>
+        <div class="date">
+          <b>{{message.date.getDate()}}.{{message.date.getMonth()}}.{{message.date.getFullYear()}}</b>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -19,25 +27,72 @@ export default {
   },
   data(){
     return {
-      loader: true
+      loader: true,
+      ws: null,
+      status: "",
+      text: "",
+      messages: []
     }
   },
   created() {
-    let ws = new WebSocket("ws://localhost:3000/")
+    this.status = "start connection to server, please wait"
+    let ws = new WebSocket("ws://172.26.20.137:3000/")
     ws.onopen = () => {
-      ws.send(JSON.stringify({
-        action_type:"send-message",
-        data:"hi sweety"
-      }))
-      this.loader = false
+      this.ws = ws
+      this.status = "Great, have access!"
+      setTimeout(() => {
+        this.status = "Wait! :D"
+      }, 300)
+      setTimeout(() => {
+        this.loader = false
+      }, 2000)
+    }
+    ws.onmessage = (message) => {
+      let decodedMessage = JSON.parse(message.data)
+      decodedMessage.date = new Date()
+      this.messages.unshift(decodedMessage)
+    }
+  },
+  methods: {
+    sendMessage(){
+      if (this.ws){
+        this.ws.send(JSON.stringify({actionType: "send-message", data: this.text}))
+      }
     }
   }
 }
 </script>
 
 <style>
+.date{
+  width: 100%;
+  display: flex;
+  justify-content: end;
+}
+.date b{
+  font-size: 14px;
+}
+.card{
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 2px solid #282828;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.card:hover{
+  transition: 0.3s;
+  border: 2px solid #dcb639;
+  box-shadow: 0px 0px 57px -23px #2828284a;
+}
+.body{
+  width: 450px;
+  display: flex;
+  justify-content: left;
+  flex-direction: column;
+}
 .header{
-  width: 90%;
+  width: 450px;
   display: flex;
   justify-content: left;
   flex-direction: column;
@@ -97,6 +152,7 @@ export default {
   cursor: pointer;
 }
 .row{
+  flex-direction: column;
   font-family: 'Inter', sans-serif;
   width: 60%;
   display: flex;
